@@ -4,21 +4,35 @@ import net.blauerfalke.synco.merge.MergeStrategy;
 import net.blauerfalke.synco.merge.conflict.MergeConflictStrategy;
 import net.blauerfalke.synco.merge.field.FieldMergeStrategy;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 public class SyncConfiguration {
 
-    Map<Class,MergeStrategy> mergeStrategyMap = new HashMap<Class, MergeStrategy>();
-    Map<Class,Map<String,FieldMergeStrategy>> fieldMergeStrategyMap = new HashMap<Class, Map<String, FieldMergeStrategy>>();
-    Map<Class,Map<String,MergeConflictStrategy>> conflictMergeStrategyFieldNameMap = new HashMap<Class, Map<String, MergeConflictStrategy>>();
-    Map<Class,Map<Class,MergeConflictStrategy>> conflictMergeStrategyFieldTypeMap = new HashMap<Class, Map<Class, MergeConflictStrategy>>();
+    private Map<Class,MergeStrategy> mergeStrategyMap = new HashMap<>();
+    private Map<Class,Map<String,FieldMergeStrategy>> fieldMergeStrategyMap = new HashMap<>();
+    private Map<Class,Map<String,MergeConflictStrategy>> conflictMergeStrategyFieldNameMap = new HashMap<>();
+    private Map<Class,Map<Class,MergeConflictStrategy>> conflictMergeStrategyFieldTypeMap = new HashMap<>();
+    private Map<Class,List<String>> syncableFieldsMap = new HashMap<>();
+
+    public void addMergeStrategyForType(Class<?> type, MergeStrategy mergeStrategy) {
+        mergeStrategyMap.put(type, mergeStrategy);
+    }
 
     public MergeStrategy findMergeStrategyForType(Class<?> type) {
         if(mergeStrategyMap.containsKey(type))
             return mergeStrategyMap.get(type);
         return null;
+    }
+
+    public void addFieldMergeStrategy(Class<?> syncableType, String fieldName, FieldMergeStrategy fieldMergeStrategy) {
+        if(!fieldMergeStrategyMap.containsKey(syncableType)) {
+            fieldMergeStrategyMap.put(syncableType, new HashMap<>());
+        }
+        fieldMergeStrategyMap.get(syncableType).put(fieldName, fieldMergeStrategy);
     }
 
     public FieldMergeStrategy findFieldMergeStrategyForSyncableTypeAndFieldName(Class<?> syncableType, String fieldName) {
@@ -30,6 +44,13 @@ public class SyncConfiguration {
         return null;
     }
 
+    public void addMergeConflictStrategyForFieldName(Class<?> syncableType, String fieldName, MergeConflictStrategy mergeConflictStrategy) {
+        if(!conflictMergeStrategyFieldNameMap.containsKey(syncableType)) {
+            conflictMergeStrategyFieldNameMap.put(syncableType, new HashMap<>());
+        }
+        conflictMergeStrategyFieldNameMap.get(syncableType).put(fieldName, mergeConflictStrategy);
+    }
+
     public MergeConflictStrategy findMergeConflictStrategyForSyncableTypeAndFieldName(Class<?> syncableType, String fieldName) {
         if(conflictMergeStrategyFieldNameMap.containsKey(syncableType)) {
             if(conflictMergeStrategyFieldNameMap.get(syncableType).containsKey(fieldName)) {
@@ -39,6 +60,13 @@ public class SyncConfiguration {
         return null;
     }
 
+    public void addMergeConflictStrategyForFieldType(Class<?> syncableType, Class<?> fieldType, MergeConflictStrategy mergeConflictStrategy) {
+        if(!conflictMergeStrategyFieldTypeMap.containsKey(syncableType)) {
+            conflictMergeStrategyFieldTypeMap.put(syncableType, new HashMap<>());
+        }
+        conflictMergeStrategyFieldTypeMap.get(syncableType).put(fieldType, mergeConflictStrategy);
+    }
+
     public MergeConflictStrategy findMergeConflictStrategyForSyncableTypeAndFieldType(Class<?> syncableType, Class<?> fieldType) {
         if(conflictMergeStrategyFieldTypeMap.containsKey(syncableType)) {
             if(conflictMergeStrategyFieldTypeMap.get(syncableType).containsKey(fieldType)) {
@@ -46,5 +74,16 @@ public class SyncConfiguration {
             }
         }
         return null;
+    }
+
+    public void addSyncableFieldsForType(Class<?> type, List<String> syncableFields) {
+        syncableFieldsMap.put(type, syncableFields);
+    }
+
+    public List<String> getSyncableFieldsForType(Class<?> syncableType) {
+        if(syncableFieldsMap.containsKey(syncableType)) {
+            return syncableFieldsMap.get(syncableType);
+        }
+        return Collections.emptyList();
     }
 }

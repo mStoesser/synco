@@ -1,6 +1,5 @@
 package net.blauerfalke.synco.model;
 
-import net.blauerfalke.synco.model.Syncable;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

@@ -1,20 +1,20 @@
 package net.blauerfalke.synco.merge.field;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import net.blauerfalke.synco.Sync;
 import net.blauerfalke.synco.merge.conflict.MergeConflictStrategy;
 import net.blauerfalke.synco.model.Diff;
 import net.blauerfalke.synco.model.SyncTriple;
 import net.blauerfalke.synco.model.Syncable;
+import net.blauerfalke.synco.util.SyncUtil;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ListFieldMergeStrategy implements FieldMergeStrategy {
 
     @Override
     public Diff<?> mergeField(Diff<?> left, Diff<?> right, SyncTriple syncTriple, MergeConflictStrategy mergeConflictStrategy) {
-        Class<?> type = Sync.findType(left.from, left.to, right.from, right.to);
+        Class<?> type = SyncUtil.findType(left.from, left.to, right.from, right.to);
         if(!type.equals(List.class)) {
             throw new IllegalArgumentException("wrong type");
         }
@@ -47,7 +47,7 @@ public class ListFieldMergeStrategy implements FieldMergeStrategy {
                     } else {
                         if (contains(removedObject, id)) {
                             //conflict (in left removed in right inserted) -> use ConflictStrategy
-                            Diff merged = mergeConflictStrategy.mergeField(new Diff(o, null),new Diff(null, o), syncTriple);
+                            Diff merged = mergeConflictStrategy.mergeField(new Diff<>(o, null),new Diff<>(null, o), syncTriple);
                             if(merged.to != null) {
                                 removedObject.remove(o);
                                 insertedObject.add(o);
@@ -68,7 +68,7 @@ public class ListFieldMergeStrategy implements FieldMergeStrategy {
                     } else {
                         if (contains(insertedObject, id)) {
                             //conflict (in left inserted in right removed) -> use ConflictStrategy
-                            Diff merged = mergeConflictStrategy.mergeField(new Diff(null, o),new Diff(o, null), syncTriple);
+                            Diff merged = mergeConflictStrategy.mergeField(new Diff<>(null, o),new Diff<>(o, null), syncTriple);
                             if(merged.to == null) {
                                 insertedObject.remove(o);
                                 removedObject.add(o);
