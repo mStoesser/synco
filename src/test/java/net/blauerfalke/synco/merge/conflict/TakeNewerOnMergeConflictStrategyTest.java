@@ -19,8 +19,8 @@ public class TakeNewerOnMergeConflictStrategyTest {
 
     @Test
     public void testMergeFieldReturnsLeftDiffOnLeftNewer() {
-        Diff leftDiff = new Diff("a", "b");
-        Diff rightDiff = new Diff("a", "c");
+        Diff leftDiff = new Diff<>("a", "b");
+        Diff rightDiff = new Diff<>("a", "c");
         Syncable left = mock(Syncable.class);
         when(left.getUpdated()).thenReturn(100L);
         Syncable right = mock(Syncable.class);
@@ -34,8 +34,8 @@ public class TakeNewerOnMergeConflictStrategyTest {
 
     @Test
     public void testMergeFieldReturnsRightDiffOnRightNewer() {
-        Diff leftDiff = new Diff("a", "b");
-        Diff rightDiff = new Diff("a", "c");
+        Diff leftDiff = new Diff<>("a", "b");
+        Diff rightDiff = new Diff<>("a", "c");
         Syncable left = mock(Syncable.class);
         when(left.getUpdated()).thenReturn(200L);
         Syncable right = mock(Syncable.class);
@@ -49,8 +49,8 @@ public class TakeNewerOnMergeConflictStrategyTest {
 
     @Test
     public void testMergeFieldReturnsLeftOnEquals() {
-        Diff leftDiff = new Diff("a", "b");
-        Diff rightDiff = new Diff("a", "c");
+        Diff leftDiff = new Diff<>("a", "b");
+        Diff rightDiff = new Diff<>("a", "c");
         Syncable left = mock(Syncable.class);
         when(left.getUpdated()).thenReturn(500L);
         Syncable right = mock(Syncable.class);

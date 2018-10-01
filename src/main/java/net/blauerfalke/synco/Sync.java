@@ -95,7 +95,7 @@ public class Sync {
         provider.save(syncable.getId()+"-base", lastRemote);
     }
 
-    private MergeStrategy getMergeStrategy(Class<?> type) {
+    public MergeStrategy getMergeStrategy(Class<?> type) {
         MergeStrategy mergeStrategy = syncConfiguration.findMergeStrategyForType(type);
         if(null != mergeStrategy)
             return mergeStrategy;
@@ -107,7 +107,7 @@ public class Sync {
         if(null != fieldMergeStrategy)
             return fieldMergeStrategy;
 
-        if(fieldType.equals(List.class)) {
+        if (List.class.isAssignableFrom(fieldType)) {
             return (FieldMergeStrategy) singletons.get(ListFieldMergeStrategy.class);
         }
         return (FieldMergeStrategy) singletons.get(SimpleFieldMergeStrategy.class);

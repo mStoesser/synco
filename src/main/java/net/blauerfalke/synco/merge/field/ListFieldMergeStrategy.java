@@ -12,97 +12,193 @@ import java.util.List;
 
 public class ListFieldMergeStrategy implements FieldMergeStrategy {
 
+    private class Tuple {
+        List<Object> insert = new ArrayList<>();
+        List<Object> delete = new ArrayList<>();
+    }
+
     @Override
     public Diff<?> mergeField(Diff<?> left, Diff<?> right, SyncTriple syncTriple, MergeConflictStrategy mergeConflictStrategy) {
+        if (left.to == null && right.to == null) {
+            return new Diff<>(left.from, null);
+        }
+
         Class<?> type = SyncUtil.findType(left.from, left.to, right.from, right.to);
-        if(!type.equals(List.class)) {
+        if (!List.class.isAssignableFrom(type)) {
             throw new IllegalArgumentException("wrong type");
         }
-        List<Object> removedObject = new ArrayList<Object>();
-        List<Object> insertedObject = new ArrayList<Object>();
-        final List<?> baseList = (List<?>) left.from;
-        List<?> leftList = (List<?>) left.to;
-        List<?> rightList = (List<?>) right.to;
-        if(null != leftList) {
 
-            //leftList.stream().filter(o -> !baseList.contains(o)).collect(Collectors.toList());
+        Tuple changedLeft = calculateChanges((List<?>) left.from, (List<?>) left.to);
+        Tuple changesRight = calculateChanges((List<?>) right.from, (List<?>) right.to);
 
-            for(Object o : leftList) {
-                if(!contains(baseList, getId(o))) {
-                    insertedObject.add(o);
-                }
-            }
-            for(Object o : baseList) {
-                if(!contains(leftList, getId(o))) {
-                    removedObject.add(o);
-                }
-            }
-        }
-        if(null != rightList) {
-            for(Object o : rightList) {
-                String id = getId(o);
-                if(!contains(baseList, id) ) {
-                    if(contains(insertedObject, id)) {
-                        // object was add in left and right -> it is like left.to and right.to equals... -> nothing to do here
-                    } else {
-                        if (contains(removedObject, id)) {
-                            //conflict (in left removed in right inserted) -> use ConflictStrategy
-                            Diff merged = mergeConflictStrategy.mergeField(new Diff<>(o, null),new Diff<>(null, o), syncTriple);
-                            if(merged.to != null) {
-                                removedObject.remove(o);
-                                insertedObject.add(o);
-                            }
-                        } else {
-                            // unkown object insert it
-                            insertedObject.add(o);
-                        }
-                    }
-
-                }
-            }
-            for(Object o : baseList) {
-                String id = getId(o);
-                if(!contains(rightList, id)) {
-                    if(contains(removedObject, id)) {
-                        // object was removed in left and right -> it is like left.to and right.to equals... -> nothing to do here
-                    } else {
-                        if (contains(insertedObject, id)) {
-                            //conflict (in left inserted in right removed) -> use ConflictStrategy
-                            Diff merged = mergeConflictStrategy.mergeField(new Diff<>(null, o),new Diff<>(o, null), syncTriple);
-                            if(merged.to == null) {
-                                insertedObject.remove(o);
-                                removedObject.add(o);
-                            }
-                        } else {
-                            // left has no touch with it -> remove it
-                            removedObject.add(o);
-                        }
-                    }
-                }
+        if (left.to == null) {
+            if (changesRight.insert.isEmpty() && changesRight.delete.isEmpty()) {
+                return new Diff<>(left.from, left.to);
+            } else {
+                return mergeConflictStrategy.mergeField(left, right, syncTriple);
             }
         }
 
-        List<Object> merge = new ArrayList<Object>(baseList);
-        for(Object o : removedObject) {
-            merge.remove(o);
+        if (right.to == null) {
+            if (changedLeft.insert.isEmpty() && changedLeft.delete.isEmpty()) {
+                return new Diff<>(left.from, right.to);
+            } else {
+                return mergeConflictStrategy.mergeField(left, right, syncTriple);
+            }
         }
-        for(Object o : insertedObject){
-            merge.add(o);
-        }
-        return new Diff<Object>(baseList, merge);
+
+        Tuple changes = merge(changedLeft, changesRight, syncTriple, mergeConflictStrategy);
+
+        List<Object> merge = new ArrayList<>((List<?>) left.from);
+        merge.removeAll(changes.delete);
+        merge.addAll(changes.insert);
+
+        return new Diff<>(left.from, merge);
     }
 
-    private static String getId(Object o) {
-        if(o instanceof Syncable) {
-            ((Syncable)o).getId();
+    private Tuple calculateChanges(List<?> base, List<?> list) {
+        Tuple tuple = new Tuple();
+
+        if (base == null) {
+            if (list != null) {
+                tuple.insert.addAll(list);
+            }
+            return tuple;
         }
-        return o.toString();
+
+        if (list == null) {
+            tuple.delete.addAll(base);
+            return tuple;
+        }
+
+        for (Object o : list) {
+            // if o is multiple times
+
+            int count = count(o, list) - count(o, tuple.insert);
+            if (!contains(base, o, count)) {
+                tuple.insert.add(o);
+            }
+        }
+
+        for (Object o : base) {
+            if (!contains(list, o, count(o, base) - count(o, tuple.delete))) {
+                tuple.delete.add(o);
+            }
+        }
+        return tuple;
     }
 
-    private static boolean contains(final List<?> list, final String id) {
-        for(Object o : list) {
-            if(o instanceof Syncable && id.equals(((Syncable)o).getId())) {
-                return true;
+    private Tuple merge(Tuple left, Tuple right, SyncTriple syncTriple, MergeConflictStrategy mergeConflictStrategy) {
+        final Tuple changes = new Tuple();
+
+
+        for (Object o : left.insert) {
+            if (contains(right.delete, o)) {
+                // conflict: inserted left, removed right
+                Diff merged = mergeConflictStrategy.mergeField(new Diff<>(null, o), new Diff<>(o, null), syncTriple);
+                if (merged.to != null) {
+                    changes.insert.add(o);
+                }
+            } else {
+                changes.insert.add(o);
+            }
+        }
+
+        for (Object o : right.insert) {
+            int count = count(o, right.insert) - count(o, changes.insert);
+            if (contains(changes.insert, o, count)) {
+                continue;
+            } else if (contains(left.delete, o)) {
+                // conflict: inerted right removed left
+                Diff merged = mergeConflictStrategy.mergeField(new Diff<>(o, null), new Diff<>(null, o), syncTriple);
+                if (merged.to != null) {
+                    changes.insert.add(o);
+                }
+            } else {
+                changes.insert.add(o);
+            }
+        }
+
+        for (Object o : left.delete) {
+            if (contains(right.insert, o)) {
+                //conflict: inserted right, removed left
+                Diff merged = mergeConflictStrategy.mergeField(new Diff<>(o, null), new Diff<>(null, o), syncTriple);
+                if (merged.to == null) {
+                    changes.delete.add(o);
+                }
+            } else {
+                changes.delete.add(o);
+            }
+        }
+
+        for (Object o : right.delete) {
+            int count = count(o, right.delete) - count(o, changes.delete);
+            if (contains(changes.delete, o, count)) {
+                continue;
+            } else if (contains(left.insert, o)) {
+                //conflict: inserted left, removed right
+                Diff merged = mergeConflictStrategy.mergeField(new Diff<>(null, o), new Diff<>(o, null), syncTriple);
+                if (merged.to == null) {
+                    changes.delete.add(o);
+                }
+            } else {
+                changes.delete.add(o);
+            }
+        }
+        return changes;
+    }
+
+//    private static String getId(Object o) {
+//        if(o instanceof Syncable) {
+//            ((Syncable)o).getId();
+//        }
+//        return o.toString();
+//    }
+
+    private static int count(Object object, final List<?>... lists) {
+        if (object instanceof Syncable) {
+            int n = 0;
+            final String id = ((Syncable) object).getId();
+            for (List<?> list : lists)
+                for (Object o : list) {
+                    if (o instanceof Syncable && SyncUtil.equals(id, ((Syncable) o).getId())) {
+                        n++;
+                    }
+                }
+            return n;
+        } else {
+            int n = 0;
+            for (List<?> list : lists)
+                for (Object o : list) {
+                    if (SyncUtil.equals(o, object)) {
+                        n++;
+                    }
+                }
+            return n;
+        }
+    }
+
+    private static boolean contains(final List<?> list, final Object object) {
+        return contains(list, object, 1);
+    }
+
+    private static boolean contains(final List<?> list, final Object object, final int nTimes) {
+        if (object instanceof Syncable) {
+            int n = 0;
+            final String id = ((Syncable) object).getId();
+            for (Object o : list) {
+                if (o instanceof Syncable && SyncUtil.equals(id, ((Syncable) o).getId())) {
+                    if (++n >= nTimes)
+                        return true;
+                }
+            }
+        } else {
+            int n = 0;
+            for (Object o : list) {
+                if (SyncUtil.equals(o, object)) {
+                    if (++n >= nTimes)
+                        return true;
+                }
             }
         }
         return false;

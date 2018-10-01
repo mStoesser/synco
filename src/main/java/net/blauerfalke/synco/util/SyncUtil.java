@@ -43,7 +43,7 @@ public class SyncUtil {
         return diffs;
     }
 
-    private static boolean equals(Object a, Object b) {
+    public static boolean equals(Object a, Object b) {
         return (a != null && a.equals(b)) || (a == null && b == null);
     }
 
