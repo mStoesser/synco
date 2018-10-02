@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(JUnit4.class)
@@ -87,5 +89,25 @@ public class SyncConfigurationTest {
         List<String> result = syncConfiguration.getSyncableFieldsForType(SyncObject.class);
 
         assertEquals(syncableFields, result);
+    }
+
+    @Test
+    public void testUseMetadataLocal() {
+        SyncConfiguration syncConfiguration = new SyncConfiguration();
+        assertFalse(syncConfiguration.useMetadataLocal());
+        syncConfiguration.setUseMetadataLocal(true);
+        assertTrue(syncConfiguration.useMetadataLocal());
+        syncConfiguration.setUseMetadataLocal(false);
+        assertFalse(syncConfiguration.useMetadataLocal());
+    }
+
+    @Test
+    public void testUseMetadataRemote() {
+        SyncConfiguration syncConfiguration = new SyncConfiguration();
+        assertTrue(syncConfiguration.useMetadataRemote());
+        syncConfiguration.setUseMetadataRemote(false);
+        assertFalse(syncConfiguration.useMetadataRemote());
+        syncConfiguration.setUseMetadataRemote(true);
+        assertTrue(syncConfiguration.useMetadataRemote());
     }
 }

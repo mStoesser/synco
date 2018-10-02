@@ -26,10 +26,12 @@ import net.blauerfalke.synco.merge.field.ListFieldMergeStrategy;
 import net.blauerfalke.synco.merge.field.SimpleFieldMergeStrategy;
 import net.blauerfalke.synco.model.SyncObject;
 import net.blauerfalke.synco.model.Syncable;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.util.ArrayList;
@@ -43,19 +45,29 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(JUnit4.class)
 public class SyncTest {
 
     private static final String ID = "ID";
 
-    private SyncableProvider localProvider = mock(SyncableProvider.class);
-    private SyncableProvider remoteProvider = mock(SyncableProvider.class);
+    private SyncableProvider localProvider = mock(SyncableProvider.class, withSettings().extraInterfaces(MetadataProvider.class));
+    private MetadataProvider localMetadataProvider = (MetadataProvider) localProvider;
+    private SyncableProvider remoteProvider = mock(SyncableProvider.class, withSettings().extraInterfaces(MetadataProvider.class));
+    private MetadataProvider remoteMetadataProvider = (MetadataProvider) remoteProvider;
     private SyncConfiguration syncConfiguration = spy(new SyncConfiguration());
     private Sync sync = new Sync(localProvider, remoteProvider, syncConfiguration);
+
+    @Before
+    public void setUp() {
+        when(syncConfiguration.useMetadataLocal()).thenReturn(false);
+        when(syncConfiguration.useMetadataRemote()).thenReturn(false);
+    }
 
     @Test
     public void testSyncPushesLocalChangesToRemote() {
@@ -127,6 +139,56 @@ public class SyncTest {
         assertEquals(Double.valueOf(3.2d), result.getReal());
         assertEquals(Long.valueOf(300l), result.getUpdated());
         verify(localProvider).save(ID+"-base", remoteSaved);
+    }
+
+    @Test
+    public void testMetadataLoadingLocalAndRemoteChanges() {
+        setupMetadata(
+                new SyncObject(ID, "base", 1L, 1.5d, 100L, false),
+                new SyncObject(ID, "local", 2L, 2.7d, 200L, false),
+                new SyncObject(ID, "remote", 3L, 3.2d, 300L, false));
+
+        sync.syncSyncable(ID);
+
+        verify(localProvider, times(2)).load(Mockito.matches(ID+"|"+ID+"-base"));
+        verify(remoteProvider).load(ID);
+    }
+
+    @Test
+    public void testMetadataLoadingRemoteChanges() {
+        setupMetadata(
+                new SyncObject(ID, "base", 1L, 1.5d, 100L, false),
+                new SyncObject(ID, "base", 1L, 1.5d, 100L, false),
+                new SyncObject(ID, "remote", 3L, 3.2d, 300L, false));
+
+        sync.syncSyncable(ID);
+
+        verify(remoteProvider).load(ID);
+    }
+
+    @Test
+    public void testMetadataLoadingLocalChanges() {
+        setupMetadata(
+                new SyncObject(ID, "base", 1L, 1.5d, 100L, false),
+                new SyncObject(ID, "local", 2L, 2.7d, 200L, false),
+                new SyncObject(ID, "base", 1L, 1.5d, 100L, false));
+
+        sync.syncSyncable(ID);
+
+        verify(localProvider).load(ID);
+    }
+
+    private void setupMetadata(SyncObject base, SyncObject local, SyncObject remote) {
+        when(syncConfiguration.useMetadataLocal()).thenReturn(true);
+        when(syncConfiguration.useMetadataRemote()).thenReturn(true);
+        when(localMetadataProvider.loadMetadata(anyString())).thenAnswer((InvocationOnMock invocation) ->
+                invocation.getArgument(0).toString().contains("-base") ? base : local
+        );
+        when(remoteMetadataProvider.loadMetadata(anyString())).thenReturn(remote);
+        when(localProvider.load(anyString())).thenAnswer((InvocationOnMock invocation) ->
+                invocation.getArgument(0).toString().contains("-base") ? base : local
+        );
+        when(remoteProvider.load(anyString())).thenReturn(remote);
     }
 
     @Test

@@ -34,6 +34,25 @@ public class SyncConfiguration {
     private Map<Class,Map<Class,MergeConflictStrategy>> conflictMergeStrategyFieldTypeMap = new HashMap<>();
     private Map<Class,List<String>> syncableFieldsMap = new HashMap<>();
 
+    private boolean useMetadataLocal = false;
+    private boolean useMetadataRemote = true;
+
+    public void setUseMetadataLocal(boolean useMetadataLocal) {
+        this.useMetadataLocal = useMetadataLocal;
+    }
+
+    public void setUseMetadataRemote(boolean useMetadataRemote) {
+        this.useMetadataRemote = useMetadataRemote;
+    }
+
+    public boolean useMetadataLocal() {
+        return useMetadataLocal;
+    }
+
+    public boolean useMetadataRemote() {
+        return useMetadataRemote;
+    }
+
     public void addMergeStrategyForType(Class<?> type, MergeStrategy mergeStrategy) {
         mergeStrategyMap.put(type, mergeStrategy);
     }
