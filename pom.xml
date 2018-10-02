@@ -38,10 +38,25 @@
     </properties>
 
     <scm>
+        <connection>scm:git:git@github.com/mStoesser/synco.git</connection>
+        <developerConnection>scm:git:git@github.com:mStoesser/synco.git</developerConnection>
         <url>https://github.com/mStoesser/synco</url>
-        <connection>scm:git:git@github.com:mStoesser/synco.git</connection>
-        <tag>HEAD</tag>
     </scm>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Michael Stößer</name>
+            <email>michael.stoesser@gmail.com</email>
+        </developer>
+    </developers>
+
     <dependencyManagement>
         <dependencies>
           
