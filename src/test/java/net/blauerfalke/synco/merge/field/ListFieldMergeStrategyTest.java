@@ -23,6 +23,8 @@ import net.blauerfalke.synco.model.SyncTriple;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -141,7 +143,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some");
         List<String> expectedList = Arrays.asList("base", "list", "some", "cool", "cool");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(0); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -157,7 +160,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some");
         List<String> expectedList = Arrays.asList("base", "list", "some");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(1); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -173,7 +177,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some");
         List<String> expectedList = Arrays.asList("base", "list", "some", "cool", "cool", "cool");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(0); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -189,7 +194,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some", "cool", "cool");
         List<String> expectedList = Arrays.asList("base", "list", "some");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(0); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -205,7 +211,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some", "cool", "cool");
         List<String> expectedList = Arrays.asList("base", "list", "some", "cool", "cool");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(1); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -251,7 +258,8 @@ public class ListFieldMergeStrategyTest {
         List<String> rightList = Arrays.asList("base", "list", "some", "some", "stuff", "some", "insert", "me");
         List<String> expectedList = Arrays.asList("base", "list", "stuff", "insert", "me");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(0); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, rightList), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -314,7 +322,8 @@ public class ListFieldMergeStrategyTest {
         List<String> baseList = Arrays.asList("base");
         List<String> leftList = Arrays.asList("base", "add");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(0)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(0); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, null), mock(SyncTriple.class), mergeConflictStrategy);
 
@@ -328,7 +337,8 @@ public class ListFieldMergeStrategyTest {
         List<String> baseList = Arrays.asList("base");
         List<String> leftList = Arrays.asList("base", "add");
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
-        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+//        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer((invocationOnMock -> invocationOnMock.getArgument(1)));
+        when(mergeConflictStrategy.mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class))).thenAnswer(new Answer<Diff>() { public Diff answer(InvocationOnMock i) { return i.getArgument(1); }});
 
         Diff<?> result = listFieldMergeStrategy.mergeField(new Diff<>(baseList, leftList), new Diff<>(baseList, null), mock(SyncTriple.class), mergeConflictStrategy);
 

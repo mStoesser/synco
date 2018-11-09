@@ -25,11 +25,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Stream;
 
 
 @Slf4j
@@ -42,7 +43,7 @@ public class SyncUtil {
     private static final Class<?>[] BOOLEAN_TYPES = new Class[]{Boolean.TYPE, Boolean.class};
 
     private static Class<?>[] SUPPORTED_TYPES = new Class[] { Long.TYPE, Integer.TYPE, Double.TYPE, Float.TYPE, Boolean.TYPE,
-            Long.class, Integer.class, Double.class, Float.class, Boolean.class, String.class, List.class };
+            Long.class, Integer.class, Double.class, Float.class, Boolean.class, String.class, List.class, Date.class };
 
     public static Map<String,Diff> calculateChanges(Syncable base, Syncable syncable, SyncConfiguration syncConfiguration) {
         Map<String, Diff> diffs = new TreeMap<>();
@@ -115,7 +116,13 @@ public class SyncUtil {
     }
 
     private static boolean isPrimitiveType(Class<?> type) {
-        return Stream.of(Integer.TYPE, Long.TYPE, Float.TYPE, Double.TYPE).anyMatch((t)->t.equals(type));
+//        return Stream.of(Integer.TYPE, Long.TYPE, Float.TYPE, Double.TYPE).anyMatch((t)->t.equals(type));
+        for (Class<?> t : Arrays.asList(Integer.TYPE, Long.TYPE, Float.TYPE, Double.TYPE)) {
+            if (t.equals(type)) {
+                return true;
+            }
+        }
+        return false;
     }
     private static Class<?>[] mapTypes(Class<?> type) {
         if (type.equals(Integer.class)) {
@@ -135,10 +142,9 @@ public class SyncUtil {
     }
 
     private static Map<String,Object> getSyncableFields(Syncable syncable, SyncConfiguration syncConfiguration) {
-        SortedMap<String,Object> result = new TreeMap<>();
-
-        List<String> syncFields = syncConfiguration.getSyncableFieldsForType(syncable.getClass());
-        if(!syncFields.isEmpty()) {
+        final List<String> syncFields = syncConfiguration.getSyncableFieldsForType(syncable.getClass());
+        if (!syncFields.isEmpty()) {
+            final SortedMap<String, Object> result = new TreeMap<>();
             for (String fieldName : syncFields) {
                 try {
                     if (fromField(fieldName, syncable.getClass().getDeclaredField(fieldName), syncable, result))
@@ -149,14 +155,18 @@ public class SyncUtil {
                 }
 
                 try {
-                    fromMethod(fieldName, findGetterMethodForFieldName(fieldName, syncable),syncable, result);
+                    fromMethod(fieldName, findGetterMethodForFieldName(fieldName, syncable), syncable, result);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
             return result;
         }
+        return getSyncableFields(syncable);
+    }
 
+    public static Map<String,Object> getSyncableFields(Syncable syncable) {
+        SortedMap<String, Object> result = new TreeMap<>();
         Field[] fields = syncable.getClass().getDeclaredFields();
         for(Field field : fields) {
             fromField(field.getName(), field, syncable, result);
@@ -169,7 +179,7 @@ public class SyncUtil {
         return result;
     }
 
-    private static Method findSetterMethodForFieldName(String fieldName, Object syncable, Class<?> ... types) throws NoSuchMethodException {
+    public static Method findSetterMethodForFieldName(String fieldName, Object syncable, Class<?> ... types) throws NoSuchMethodException {
         String[] methodNames = new String[] {
                 "set"+fieldName.substring(0,1).toUpperCase()+fieldName.substring(1),
                 "set"+fieldName,
@@ -187,7 +197,7 @@ public class SyncUtil {
         throw new NoSuchMethodException("No method for field '"+fieldName+"' found.");
     }
 
-    private static Method findGetterMethodForFieldName(String fieldName, Object syncable) throws NoSuchMethodException {
+    public static Method findGetterMethodForFieldName(String fieldName, Object syncable) throws NoSuchMethodException {
         String[] methodNames = new String[] {
                 "get"+fieldName.substring(0,1).toUpperCase()+fieldName.substring(1),
                 fieldName,
@@ -266,9 +276,13 @@ public class SyncUtil {
     }
 
     private static boolean isSupportedType(Class<?> fieldType) {
-        return Stream.of(SUPPORTED_TYPES).anyMatch(
-                (t) -> t.equals(fieldType)
-        );
+//        return Stream.of(SUPPORTED_TYPES).anyMatch((t) -> t.equals(fieldType));
+        for (Class<?> t : SUPPORTED_TYPES) {
+            if (t.equals(fieldType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static Class<?> findType(Object ... objects) {

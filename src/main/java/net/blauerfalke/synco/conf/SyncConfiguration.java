@@ -65,7 +65,7 @@ public class SyncConfiguration {
 
     public void addFieldMergeStrategy(Class<?> syncableType, String fieldName, FieldMergeStrategy fieldMergeStrategy) {
         if(!fieldMergeStrategyMap.containsKey(syncableType)) {
-            fieldMergeStrategyMap.put(syncableType, new HashMap<>());
+            fieldMergeStrategyMap.put(syncableType, new HashMap<String,FieldMergeStrategy>());
         }
         fieldMergeStrategyMap.get(syncableType).put(fieldName, fieldMergeStrategy);
     }
@@ -81,7 +81,7 @@ public class SyncConfiguration {
 
     public void addMergeConflictStrategyForFieldName(Class<?> syncableType, String fieldName, MergeConflictStrategy mergeConflictStrategy) {
         if(!conflictMergeStrategyFieldNameMap.containsKey(syncableType)) {
-            conflictMergeStrategyFieldNameMap.put(syncableType, new HashMap<>());
+            conflictMergeStrategyFieldNameMap.put(syncableType, new HashMap<String, MergeConflictStrategy>());
         }
         conflictMergeStrategyFieldNameMap.get(syncableType).put(fieldName, mergeConflictStrategy);
     }
@@ -97,7 +97,7 @@ public class SyncConfiguration {
 
     public void addMergeConflictStrategyForFieldType(Class<?> syncableType, Class<?> fieldType, MergeConflictStrategy mergeConflictStrategy) {
         if(!conflictMergeStrategyFieldTypeMap.containsKey(syncableType)) {
-            conflictMergeStrategyFieldTypeMap.put(syncableType, new HashMap<>());
+            conflictMergeStrategyFieldTypeMap.put(syncableType, new HashMap<Class,MergeConflictStrategy>());
         }
         conflictMergeStrategyFieldTypeMap.get(syncableType).put(fieldType, mergeConflictStrategy);
     }

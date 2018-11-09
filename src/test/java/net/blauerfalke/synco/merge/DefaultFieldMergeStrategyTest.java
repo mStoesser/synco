@@ -17,7 +17,7 @@
 package net.blauerfalke.synco.merge;
 
 
-import net.blauerfalke.synco.Sync;
+import net.blauerfalke.synco.DefaultSync;
 import net.blauerfalke.synco.conf.SyncConfiguration;
 import net.blauerfalke.synco.merge.conflict.TakeNewerOnMergeConflictStrategy;
 import net.blauerfalke.synco.merge.field.SimpleFieldMergeStrategy;
@@ -27,6 +27,8 @@ import net.blauerfalke.synco.model.Syncable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -47,8 +49,9 @@ public class DefaultFieldMergeStrategyTest {
 
     @Test
     public void testMergeOnlyLeftChanges() {
-        Sync sync = mock(Sync.class);
-        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        DefaultSync sync = mock(DefaultSync.class);
+//        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        when(sync.cloneSyncable(any(Syncable.class))).then(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0); }});
         when(sync.getSyncConfiguration()).thenReturn(new SyncConfiguration());
         SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         SyncObject left = new SyncObject(ID, "left", 1L, 1.5d, 100L, false);
@@ -64,8 +67,9 @@ public class DefaultFieldMergeStrategyTest {
 
     @Test
     public void testMergeOnlyRightChanges() {
-        Sync sync = mock(Sync.class);
-        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        DefaultSync sync = mock(DefaultSync.class);
+//        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        when(sync.cloneSyncable(any(Syncable.class))).then(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0); }});
         when(sync.getSyncConfiguration()).thenReturn(new SyncConfiguration());
         SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         SyncObject left = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
@@ -81,8 +85,9 @@ public class DefaultFieldMergeStrategyTest {
 
     @Test
     public void testMergeLeftAndRightChanges() {
-        Sync sync = mock(Sync.class);
-        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        DefaultSync sync = mock(DefaultSync.class);
+//        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        when(sync.cloneSyncable(any(Syncable.class))).then(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0); }});
         when(sync.getSyncConfiguration()).thenReturn(new SyncConfiguration());
         SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         SyncObject left = new SyncObject(ID, "base", 1L, 3.5d, 100L, false);
@@ -101,8 +106,9 @@ public class DefaultFieldMergeStrategyTest {
 
     @Test
     public void testMergeLeftAndRightChangesConflicted() {
-        Sync sync = mock(Sync.class);
-        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        DefaultSync sync = mock(DefaultSync.class);
+//        when(sync.cloneSyncable(any(Syncable.class))).then(invocationOnMock -> invocationOnMock.getArgument(0));
+        when(sync.cloneSyncable(any(Syncable.class))).then(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0); }});
         when(sync.getSyncConfiguration()).thenReturn(new SyncConfiguration());
         when(sync.getMergeConflictStrategy(any(Class.class), anyString(), any(Class.class))).thenReturn(new TakeNewerOnMergeConflictStrategy());
         when(sync.getFieldMergeStrategy(any(Class.class), anyString(), any(Class.class))).thenReturn(new SimpleFieldMergeStrategy());

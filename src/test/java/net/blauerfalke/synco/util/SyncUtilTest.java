@@ -103,10 +103,6 @@ public class SyncUtilTest {
             return updated;
         }
 
-        @Override
-        public boolean isDeleted() {
-            return deleted;
-        }
     }
 
     SyncObjectWithFields syncObjectWithFields = new SyncObjectWithFields("ID", 100L, false, "string",

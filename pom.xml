@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.blauerfalke.synco</groupId>
@@ -16,6 +17,7 @@
         <mockito.version>2.22.0</mockito.version>
 
         <!-- Plugin versions -->
+        <maven-compile.version>3.8.0</maven-compile.version>
         <maven-surefire.version>2.19.1</maven-surefire.version>
         <maven.enforcer.plugin>1.4.1</maven.enforcer.plugin>
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
@@ -59,7 +61,7 @@
 
     <dependencyManagement>
         <dependencies>
-          
+
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -131,6 +133,15 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compile.version}</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>${maven.enforcer.plugin}</version>
                 <executions>
@@ -142,8 +153,8 @@
                         <configuration>
                             <skip>false</skip>
                             <rules>
-                                <DependencyConvergence />
-                                <requireUpperBoundDeps />
+                                <DependencyConvergence/>
+                                <requireUpperBoundDeps/>
                                 <bannedDependencies>
                                     <searchTransitive>true</searchTransitive>
                                 </bannedDependencies>

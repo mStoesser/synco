@@ -41,7 +41,7 @@ public class SimpleFieldMergeStrategyTest {
         SyncTriple syncTriple = mock(SyncTriple.class);
         MergeConflictStrategy mergeConflictStrategy = mock(MergeConflictStrategy.class);
         Diff<?> expected = new Diff<>("a", "bc");
-        doReturn(expected).when(mergeConflictStrategy).mergeField(any(), any(), any());
+        doReturn(expected).when(mergeConflictStrategy).mergeField(any(Diff.class), any(Diff.class), any(SyncTriple.class));
 
         Diff<?> result = simpleFieldMergeStrategy.mergeField(leftDiff, rightDiff, syncTriple, mergeConflictStrategy);
 

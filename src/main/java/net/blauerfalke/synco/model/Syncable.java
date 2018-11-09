@@ -20,6 +20,5 @@ public interface Syncable {
 
     String getId();
     Long getUpdated();
-    boolean isDeleted();
 
 }
