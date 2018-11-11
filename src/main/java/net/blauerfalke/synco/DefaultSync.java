@@ -36,9 +36,6 @@ import java.util.Map;
 @Slf4j
 public class DefaultSync implements Sync {
 
-    @SuppressWarnings("WeakerAccess")
-    public static final String BASE = "-base";
-
     private static Map<Class<?>,Object> singletons = new HashMap<>();
     static {
         singletons.put(DefaultFieldMergeStrategy.class, new DefaultFieldMergeStrategy());
@@ -51,6 +48,8 @@ public class DefaultSync implements Sync {
     private SyncableProvider remoteProvider;
     private SyncConfiguration syncConfiguration;
 
+    private SyncCallback syncCallback;
+
     @SuppressWarnings("WeakerAccess")
     public DefaultSync(SyncableProvider localProvider, SyncableProvider remoteProvider) {
         this(localProvider, remoteProvider, new SyncConfiguration());
@@ -61,6 +60,10 @@ public class DefaultSync implements Sync {
         this.localProvider = localProvider;
         this.remoteProvider = remoteProvider;
         this.syncConfiguration = syncConfiguration;
+    }
+
+    public void setSyncCallback(SyncCallback syncCallback) {
+        this.syncCallback = syncCallback;
     }
 
     public void syncSyncable(String id) {
@@ -267,6 +270,9 @@ public class DefaultSync implements Sync {
     public void push(final Syncable syncable) {
         Syncable lastRemote = remoteProvider.save(syncable.getId(), syncable);
         localProvider.save(syncable.getId()+BASE, lastRemote);
+        if (syncCallback != null) {
+            syncCallback.onSyncableSynced(lastRemote);
+        }
     }
 
     public Syncable pull(final String id) {
@@ -281,6 +287,9 @@ public class DefaultSync implements Sync {
         }
         localProvider.save(remote.getId(), remote);
         localProvider.save(remote.getId()+BASE, remote);
+        if (syncCallback != null) {
+            syncCallback.onSyncableSynced(remote);
+        }
         return remote;
     }
 
