@@ -31,9 +31,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,10 +41,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -57,14 +52,15 @@ import static org.mockito.Mockito.withSettings;
 public class DefaultSyncTest {
 
     private static final String ID = "ID";
-    private static final String BASE_EXTENSION = "-base";
 
+    private SyncableProvider baseProvider = mock(SyncableProvider.class, withSettings().extraInterfaces(MetadataProvider.class));
+    private MetadataProvider baseMetadataProvider = (MetadataProvider) baseProvider;
     private SyncableProvider localProvider = mock(SyncableProvider.class, withSettings().extraInterfaces(MetadataProvider.class));
     private MetadataProvider localMetadataProvider = (MetadataProvider) localProvider;
     private SyncableProvider remoteProvider = mock(SyncableProvider.class, withSettings().extraInterfaces(MetadataProvider.class));
     private MetadataProvider remoteMetadataProvider = (MetadataProvider) remoteProvider;
     private SyncConfiguration syncConfiguration = spy(new SyncConfiguration());
-    private DefaultSync sync = new DefaultSync(localProvider, remoteProvider, syncConfiguration);
+    private DefaultSync sync = new DefaultSync(baseProvider, localProvider, remoteProvider, syncConfiguration);
 
     @Before
     public void setUp() {
@@ -77,22 +73,22 @@ public class DefaultSyncTest {
         final SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         final SyncObject remote = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         final SyncObject local = new SyncObject(ID, "local", 2L, 2.7d, 200L, false);
-//        when(localProvider.load(anyString())).thenAnswer((InvocationOnMock invocation) -> invocation.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local);
-        when(localProvider.load(anyString())).thenAnswer(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local; }});
+        when(localProvider.load(anyString())).thenReturn(local);
+        when(baseProvider.load(anyString())).thenReturn(base);
         when(remoteProvider.load(anyString())).thenReturn(remote);
         Syncable remoteSaved = mock(Syncable.class);
-        when(remoteProvider.save(anyString(), any(Syncable.class))).thenReturn(remoteSaved);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(remoteSaved);
 
         sync.syncSyncable(ID);
 
         ArgumentCaptor<Syncable> argumentCaptor  = ArgumentCaptor.forClass(Syncable.class);
-        verify(remoteProvider).save(eq(ID), argumentCaptor.capture());
+        verify(remoteProvider).save(argumentCaptor.capture());
         SyncObject result = (SyncObject) argumentCaptor.getValue();
         assertEquals("local", result.getName());
         assertEquals(Long.valueOf(2L), result.getNumber());
         assertEquals(Double.valueOf(2.7d), result.getReal());
         assertEquals(Long.valueOf(200L), result.getUpdated());
-        verify(localProvider).save(ID+BASE_EXTENSION, remoteSaved);
+        verify(baseProvider).save(remoteSaved);
     }
 
     @Test
@@ -100,20 +96,20 @@ public class DefaultSyncTest {
         final SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         final SyncObject local = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         final SyncObject remote = new SyncObject(ID, "remote", 3L, 3.2d, 300L, false);
-//        when(localProvider.load(anyString())).thenAnswer((InvocationOnMock invocation) -> invocation.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local);
-        when(localProvider.load(anyString())).thenAnswer(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local; }});
+        when(localProvider.load(anyString())).thenReturn(local);
+        when(baseProvider.load(anyString())).thenReturn(base);
         when(remoteProvider.load(anyString())).thenReturn(remote);
 
         sync.syncSyncable(ID);
 
         ArgumentCaptor<Syncable> argumentCaptor  = ArgumentCaptor.forClass(Syncable.class);
-        verify(localProvider).save(eq(ID), argumentCaptor.capture());
+        verify(localProvider).save(argumentCaptor.capture());
         SyncObject result = (SyncObject) argumentCaptor.getValue();
         assertEquals("remote", result.getName());
         assertEquals(Long.valueOf(3L), result.getNumber());
         assertEquals(Double.valueOf(3.2d), result.getReal());
         assertEquals(Long.valueOf(300L), result.getUpdated());
-        verify(localProvider).save(ID+BASE_EXTENSION, result);
+        verify(baseProvider).save(result);
     }
 
     @Test
@@ -121,24 +117,24 @@ public class DefaultSyncTest {
         final SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
         final SyncObject local = new SyncObject(ID, "local", 2L, 2.7d, 200L, false);
         final SyncObject remote = new SyncObject(ID, "remote", 3L, 3.2d, 300L, false);
-//        when(localProvider.load(anyString())).thenAnswer((InvocationOnMock invocation) -> invocation.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local);
-        when(localProvider.load(anyString())).thenAnswer(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local; }});
+        when(localProvider.load(anyString())).thenReturn(local);
+        when(baseProvider.load(anyString())).thenReturn(base);
         when(remoteProvider.load(anyString())).thenReturn(remote);
         Syncable remoteSaved = mock(Syncable.class);
-        when(remoteProvider.save(anyString(), any(Syncable.class))).thenReturn(remoteSaved);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(remoteSaved);
 
         //when(syncConfiguration.findMergeStrategyForType(any(Class.class))).thenReturn()
 
         sync.syncSyncable(ID);
 
         ArgumentCaptor<Syncable> argumentCaptor  = ArgumentCaptor.forClass(Syncable.class);
-        verify(remoteProvider).save(eq(ID), argumentCaptor.capture());
+        verify(remoteProvider).save(argumentCaptor.capture());
         SyncObject result = (SyncObject) argumentCaptor.getValue();
         assertEquals("remote", result.getName());
         assertEquals(Long.valueOf(3L), result.getNumber());
         assertEquals(Double.valueOf(3.2d), result.getReal());
         assertEquals(Long.valueOf(300L), result.getUpdated());
-        verify(localProvider).save(ID+BASE_EXTENSION, remoteSaved);
+        verify(baseProvider).save(remoteSaved);
     }
 
     @Test
@@ -150,7 +146,8 @@ public class DefaultSyncTest {
 
         sync.syncSyncable(ID);
 
-        verify(localProvider, times(2)).load(Mockito.matches(ID+"|"+ID+BASE_EXTENSION));
+        verify(localProvider).load(ID);
+        verify(baseProvider).load(ID);
         verify(remoteProvider).load(ID);
     }
 
@@ -181,11 +178,11 @@ public class DefaultSyncTest {
     private void setupMetadata(final SyncObject base, final SyncObject local, final SyncObject remote) {
         when(syncConfiguration.useMetadataLocal()).thenReturn(true);
         when(syncConfiguration.useMetadataRemote()).thenReturn(true);
-//        when(localMetadataProvider.loadMetadata(anyString())).thenAnswer((InvocationOnMock invocation) -> invocation.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local);
-        when(localMetadataProvider.loadMetadata(anyString())).thenAnswer(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local; }});
+        when(localMetadataProvider.loadMetadata(anyString())).thenReturn(local);
+        when(baseMetadataProvider.loadMetadata(anyString())).thenReturn(base);
         when(remoteMetadataProvider.loadMetadata(anyString())).thenReturn(remote);
-//        when(localProvider.load(anyString())).thenAnswer((InvocationOnMock invocation) -> invocation.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local);
-        when(localProvider.load(anyString())).thenAnswer(new Answer<Syncable>() { public Syncable answer(InvocationOnMock i) { return i.getArgument(0).toString().contains(BASE_EXTENSION) ? base : local; }});
+        when(localProvider.load(anyString())).thenReturn(local);
+        when(baseProvider.load(anyString())).thenReturn(base);
         when(remoteProvider.load(anyString())).thenReturn(remote);
     }
 
@@ -273,7 +270,8 @@ public class DefaultSyncTest {
 
         sync.syncRemote(remote);
 
-        verify(localProvider, times(2)).load(Mockito.matches(ID+"|"+ID+BASE_EXTENSION));
+        verify(localProvider).load(ID);
+        verify(baseProvider).load(ID);
         verifyNoMoreInteractions(remoteProvider);
     }
 
@@ -289,7 +287,7 @@ public class DefaultSyncTest {
 
         sync.syncLocal(local);
 
-        verify(localProvider).load(ID+BASE_EXTENSION);
+        verify(baseProvider).load(ID);
         verify(remoteProvider).load(ID);
     }
 
@@ -301,19 +299,19 @@ public class DefaultSyncTest {
         sync.pull(ID);
 
         verify(remoteProvider).load(ID);
-        verify(localProvider).save(ID, remote);
-        verify(localProvider).save(ID+BASE_EXTENSION, remote);
+        verify(localProvider).save(remote);
+        verify(baseProvider).save(remote);
     }
 
     @Test
     public void testPushLoadsRemoteAndSavesItToLocal() {
         SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 100L, false);
-        when(remoteProvider.save(anyString(), any(Syncable.class))).thenReturn(local);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(local);
 
         sync.push(local);
 
-        verify(remoteProvider).save(ID, local);
-        verify(localProvider).save(ID+ BASE_EXTENSION, local);
+        verify(remoteProvider).save(local);
+        verify(baseProvider).save(local);
     }
 
     @Test
@@ -335,22 +333,111 @@ public class DefaultSyncTest {
 
     @Test
     public void testConstructorInitiatesSyncConfiguration() {
-        DefaultSync sync = new DefaultSync(mock(SyncableProvider.class), mock(SyncableProvider.class));
+        DefaultSync sync = new DefaultSync(mock(SyncableProvider.class), mock(SyncableProvider.class), mock(SyncableProvider.class));
         assertNotNull(sync.getSyncConfiguration());
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testSyncThrowsExceptionOnRemoteIsNull() {
-        sync.syncSyncable(mock(Syncable.class), mock(Syncable.class), null);
+    @Test(expected = IllegalArgumentException.class)
+    public void testSyncThrowsExceptionOnSyncablesAllNull() {
+        sync.syncSyncable(null, null, null);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testSyncThrowsExceptionOnLocalIsNull() {
-        sync.syncSyncable(mock(Syncable.class), null, mock(Syncable.class));
+    @Test
+    public void testSyncCallsPullWhenBaseAndLocalAreNull() {
+        SyncObject remote = new SyncObject(ID, "remote", 1L, 1.5d, 100L, false);
+        when(localProvider.save(any(Syncable.class))).thenReturn(remote);
+
+        sync.syncSyncable(null, null, remote);
+
+        verifyPull(remote);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testSyncThrowsExceptionOnBaseIsNull() {
-        sync.syncSyncable(null, mock(Syncable.class), mock(Syncable.class));
+    @Test
+    public void testSyncCallsPushWhenBaseAndRemoteAreNull() {
+        SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 100L, false);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(local);
+        when(localProvider.save(any(Syncable.class))).thenReturn(local);
+
+        sync.syncSyncable(null, local, null);
+
+        verifyPush(local);
+    }
+
+    @Test
+    public void testSyncCallsPushWhenLocalAndRemoteAreNull() {
+        SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(base);
+        when(localProvider.save(any(Syncable.class))).thenReturn(base);
+
+        sync.syncSyncable(base, null, null);
+
+        verifyPush(base);
+    }
+
+    @Test
+    public void testSyncCallsPushWhenRemoteIsNull() {
+        SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
+        SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 100L, false);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(local);
+        when(localProvider.save(any(Syncable.class))).thenReturn(local);
+
+        sync.syncSyncable(base, local, null);
+
+        verifyPush(local);
+    }
+
+    @Test
+    public void testSyncCallsPullWhenLocalIsNull() {
+        SyncObject base = new SyncObject(ID, "base", 1L, 1.5d, 100L, false);
+        SyncObject remote = new SyncObject(ID, "remote", 1L, 1.5d, 100L, false);
+        when(localProvider.save(any(Syncable.class))).thenReturn(base);
+
+        sync.syncSyncable(base, null, remote);
+
+        verifyPull(remote);
+    }
+
+    @Test
+    public void testSyncSavesBaseWhenBaseIsNullAndLocalRemoteEquals() {
+        SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 100L, false);
+        SyncObject remote = new SyncObject(ID, "remote", 1L, 1.5d, 100L, false);
+        when(baseProvider.save(any(Syncable.class))).thenReturn(local);
+
+        sync.syncSyncable(null, local, remote);
+
+        verify(baseProvider).save(local);
+    }
+
+    @Test
+    public void testSyncCallsPushWhenBaseIsNullAndLocalIsNewer() {
+        SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 200L, false);
+        SyncObject remote = new SyncObject(ID, "remote", 1L, 1.5d, 100L, false);
+        when(remoteProvider.save(any(Syncable.class))).thenReturn(local);
+        when(localProvider.save(any(Syncable.class))).thenReturn(local);
+
+        sync.syncSyncable(null, local, remote);
+
+        verifyPush(local);
+    }
+
+    @Test
+    public void testSyncCallsPullWhenBaseIsNullAndRemoteIsNewer() {
+        SyncObject local = new SyncObject(ID, "local", 1L, 1.5d, 100L, false);
+        SyncObject remote = new SyncObject(ID, "remote", 1L, 1.5d, 200L, false);
+        when(localProvider.save(any(Syncable.class))).thenReturn(local);
+
+        sync.syncSyncable(null, local, remote);
+
+        verifyPull(remote);
+    }
+
+    private void verifyPush(Syncable local) {
+        verify(remoteProvider).save(local);
+        verify(baseProvider).save(local);
+    }
+
+    private void verifyPull(Syncable remote) {
+        verify(localProvider).save(remote);
+        verify(baseProvider).save(remote);
     }
 }

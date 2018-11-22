@@ -24,8 +24,6 @@ import net.blauerfalke.synco.model.Syncable;
 
 public interface Sync {
 
-    String BASE = "-base";
-
     void syncSyncable(String id);
 
     void syncRemote(Syncable remote);

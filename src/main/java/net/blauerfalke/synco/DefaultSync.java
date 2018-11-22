@@ -45,18 +45,20 @@ public class DefaultSync implements Sync {
     }
 
     private SyncableProvider localProvider;
+    private SyncableProvider baseProvider;
     private SyncableProvider remoteProvider;
     private SyncConfiguration syncConfiguration;
 
     private SyncCallback syncCallback;
 
     @SuppressWarnings("WeakerAccess")
-    public DefaultSync(SyncableProvider localProvider, SyncableProvider remoteProvider) {
-        this(localProvider, remoteProvider, new SyncConfiguration());
+    public DefaultSync(SyncableProvider baseProvider, SyncableProvider localProvider, SyncableProvider remoteProvider) {
+        this(baseProvider, localProvider, remoteProvider, new SyncConfiguration());
     }
 
     @SuppressWarnings("WeakerAccess")
-    public DefaultSync(SyncableProvider localProvider, SyncableProvider remoteProvider, SyncConfiguration syncConfiguration) {
+    public DefaultSync(SyncableProvider baseProvider, SyncableProvider localProvider, SyncableProvider remoteProvider, SyncConfiguration syncConfiguration) {
+        this.baseProvider = baseProvider;
         this.localProvider = localProvider;
         this.remoteProvider = remoteProvider;
         this.syncConfiguration = syncConfiguration;
@@ -75,10 +77,10 @@ public class DefaultSync implements Sync {
         Syncable local;
         Syncable remote;
 
-        if(localProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
-            base = ((MetadataProvider) localProvider).loadMetadata(id+BASE);
+        if(baseProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
+            base = ((MetadataProvider) baseProvider).loadMetadata(id);
         } else {
-            base = localProvider.load(id+BASE);
+            base = baseProvider.load(id);
             baseIsFullyLoaded = true;
         }
 
@@ -107,10 +109,10 @@ public class DefaultSync implements Sync {
         boolean localIsFullyLoaded = false;
         Syncable base;
         Syncable local;
-        if(localProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
-            base = ((MetadataProvider) localProvider).loadMetadata(remote.getId()+BASE);
+        if(baseProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
+            base = ((MetadataProvider) baseProvider).loadMetadata(remote.getId());
         } else {
-            base = localProvider.load(remote.getId()+BASE);
+            base = baseProvider.load(remote.getId());
             baseIsFullyLoaded = true;
         }
 
@@ -132,10 +134,10 @@ public class DefaultSync implements Sync {
         boolean remoteIsFullyLoaded = false;
         Syncable base;
         Syncable remote;
-        if(localProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
-            base = ((MetadataProvider) localProvider).loadMetadata(local.getId()+BASE);
+        if(baseProvider instanceof MetadataProvider && syncConfiguration.useMetadataLocal()) {
+            base = ((MetadataProvider) baseProvider).loadMetadata(local.getId());
         } else {
-            base = localProvider.load(local.getId()+BASE);
+            base = baseProvider.load(local.getId());
             baseIsFullyLoaded = true;
         }
 
@@ -173,7 +175,7 @@ public class DefaultSync implements Sync {
     }
     public void syncSyncable(Syncable base, Syncable local, Syncable remote, boolean baseIsFullyLoaded, boolean localIsFullyLoaded, boolean remoteIsFullyLoaded) {
 
-        /*if (base == null && local == null && remote == null) {
+        if (base == null && local == null && remote == null) {
             throw new IllegalArgumentException("can not sync null values");
         }
         if (base == null) {
@@ -183,11 +185,19 @@ public class DefaultSync implements Sync {
                 push(local);
             } else if(local == null) {
                 // it was created remote -> pull
-                pull(remote);
+                pull(remote, remoteIsFullyLoaded);
             } else {
                 // only base is null, hardest case of all, we don't know what to do now -> use the newer
-
+                if(local.getUpdated().equals(remote.getUpdated())) {
+                    // save base
+                    baseProvider.save(local);
+                } else if(local.getUpdated() < remote.getUpdated()) {
+                    pull(remote, remoteIsFullyLoaded);
+                } else {
+                    push(local);
+                }
             }
+            return;
         }
 
         if (local == null) {
@@ -196,22 +206,25 @@ public class DefaultSync implements Sync {
                 push(base);
             } else {
                 // only local is null -> pull
-                pull(remote);
+                pull(remote, remoteIsFullyLoaded);
             }
+            return;
         }
 
         if (remote == null) {
             // only remote is null -> push
             push(local);
+            return;
         }
 
-*/
+        log.debug("check {} '{}' base: '{}' local: '{}' remote: '{}'", base.getClass().getSimpleName(), base.getId(), base.getUpdated(), local.getUpdated(), remote.getUpdated());
+
         if (local.getUpdated().equals(base.getUpdated())) {
             // no local changes -> check for remote changes
 
             if (base.getUpdated().equals(remote.getUpdated())) {
                 // no local changes, no remote -> nothing to do
-                log.debug("object '{}' is in sync",base.getId());
+                log.debug("{} '{}' is in sync", base.getClass().getSimpleName(), base.getId());
 
             } else if (base.getUpdated() < remote.getUpdated()) {
                 // not local changes, remote changes -> pull
@@ -240,18 +253,18 @@ public class DefaultSync implements Sync {
                     local = localProvider.load(local.getId());
                 }
                 if(!baseIsFullyLoaded) {
-                    base = localProvider.load(base.getId() + BASE);
+                    base = baseProvider.load(base.getId());
                 }
                 if(!remoteIsFullyLoaded) {
                     remote = remoteProvider.load(remote.getId());
                 }
-                MergeStrategy mergeStrategy = getMergeStrategy(SyncUtil.findType(base, local, remote));
-                Syncable merged = mergeStrategy.merge(this, new SyncTriple(base, local, remote));
+
+                Syncable merged = merge(base, local, remote);
                 push(merged);
 
             } else {
                 // remote is older than base -> should never happen -> (but fixed with push)
-                log.error("remote-version is older than base-version from syncable: '{}'", local.getId());
+                log.error("remote-version is older than base-version from {}: '{}'", local.getClass().getSimpleName(), local.getId());
                 if(!localIsFullyLoaded) {
                     local = localProvider.load(local.getId());
                 }
@@ -259,17 +272,25 @@ public class DefaultSync implements Sync {
             }
         } else {
             // local is older than base -> should never happen -> (but fixed with save base-version)
-            log.error("local-version is older than base-version from syncable: '{}'", local.getId());
+            log.error("local-version is older than base-version from {}: '{}'", local.getClass().getSimpleName(), local.getId());
             if(!localIsFullyLoaded) {
                 local = localProvider.load(local.getId());
             }
-            localProvider.save(local.getId()+BASE, local);
+            baseProvider.save(local);
         }
     }
 
+    public Syncable merge(Syncable base, Syncable local, Syncable remote) {
+        log.debug("merge {} '{}'", base.getClass().getSimpleName(), base.getId());
+        final MergeStrategy mergeStrategy = getMergeStrategy(SyncUtil.findType(base, local, remote));
+        return mergeStrategy.merge(this, new SyncTriple(base, local, remote));
+    }
+
     public void push(final Syncable syncable) {
-        Syncable lastRemote = remoteProvider.save(syncable.getId(), syncable);
-        localProvider.save(syncable.getId()+BASE, lastRemote);
+        log.debug("push {} '{}'", syncable.getClass().getSimpleName(), syncable.getId());
+        Syncable lastRemote = remoteProvider.save(syncable);
+        localProvider.save(lastRemote);
+        baseProvider.save(lastRemote);
         if (syncCallback != null) {
             syncCallback.onSyncableSynced(lastRemote);
         }
@@ -282,11 +303,12 @@ public class DefaultSync implements Sync {
 //        return pull(remote, remoteIsFullyLoaded());
 //    }
     private Syncable pull(Syncable remote, final boolean remoteIsFullyLoaded) {
+        log.debug("pull {} '{}'", remote.getClass().getSimpleName(), remote.getId());
         if(!remoteIsFullyLoaded) {
             remote = remoteProvider.load(remote.getId());
         }
-        localProvider.save(remote.getId(), remote);
-        localProvider.save(remote.getId()+BASE, remote);
+        localProvider.save(remote);
+        baseProvider.save(remote);
         if (syncCallback != null) {
             syncCallback.onSyncableSynced(remote);
         }
